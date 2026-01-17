@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { UserProfile, SubscriptionPlan } from '../types.ts';
-import { Icons } from '../components/Icons.tsx';
+import { UserProfile, SubscriptionPlan } from '../types';
+import { Icons } from '../components/Icons';
 import { useNavigate } from 'react-router-dom';
 
 interface MyProfileProps {
