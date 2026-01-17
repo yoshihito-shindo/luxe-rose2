@@ -4,7 +4,7 @@ services:
     name: luxe-rose-backend
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --legacy-peer-deps && npm run build
     startCommand: node server.js
     envVars:
       - key: STRIPE_SECRET_KEY
