@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Icons } from './Icons.tsx';
+import { Icons } from './Icons';
 import { Link, useLocation } from 'react-router-dom';
 
 const NavItem = ({ to, icon: Icon, label, isActive, hasBadge }: any) => (
