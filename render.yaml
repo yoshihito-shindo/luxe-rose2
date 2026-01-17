@@ -1,0 +1,15 @@
+
+services:
+  - type: web
+    name: luxe-rose-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node server.js
+    envVars:
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: API_KEY
+        sync: false
+      - key: NODE_VERSION
+        value: 20.0.0
