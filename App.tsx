@@ -10,7 +10,7 @@ import Chat from './pages/Chat';
 import Landing from './pages/Landing';
 import Verification from './pages/Verification';
 import AdminPanel from './pages/AdminPanel';
-import MyProfile from './pages/MyProfile.tsx';
+import MyProfile from './pages/MyProfile';
 import EditProfile from './pages/EditProfile';
 import Subscription from './pages/Subscription';
 import ProfileDetailModal from './pages/ProfileDetailModal';
