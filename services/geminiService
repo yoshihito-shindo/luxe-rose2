@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { UserProfile, Gender, AccountStatus, SubscriptionPlan } from "../types.ts";
+import { UserProfile, Gender, AccountStatus, SubscriptionPlan } from "../types";
 
 export const MASTER_DATA = {
   occupations: ['経営者・役員', '医師', '弁護士', '会計士・税理士', '投資家', 'パイロット', 'コンサルタント', '外資金融', '大手商社', '広告代理店', '建築家', 'ファッション関係', 'モデル', '芸能関係', '公務員', '大手企業', 'クリエイティブ', 'その他'],
