@@ -1,8 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
-import { UserProfile } from '../types.ts';
-import { Icons } from '../components/Icons.tsx';
-import { MASTER_DATA } from '../services/geminiService.ts';
+import { UserProfile } from '../types';
+import { Icons } from '../components/Icons';
+import { MASTER_DATA } from '../services/geminiService';
 import { useNavigate } from 'react-router-dom';
 
 interface DiscoverProps {
