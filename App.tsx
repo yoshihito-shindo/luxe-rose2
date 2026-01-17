@@ -1,22 +1,22 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Navigation from './components/Navigation.tsx';
-import Dashboard from './pages/Dashboard.tsx';
-import Discover from './pages/Discover.tsx';
-import Footprints from './pages/Footprints.tsx';
-import LikesReceived from './pages/LikesReceived.tsx';
-import Chat from './pages/Chat.tsx';
-import Landing from './pages/Landing.tsx';
-import Verification from './pages/Verification.tsx';
-import AdminPanel from './pages/AdminPanel.tsx';
+import Navigation from './components/Navigation';
+import Dashboard from './pages/Dashboard';
+import Discover from './pages/Discover';
+import Footprints from './pages/Footprints';
+import LikesReceived from './pages/LikesReceived';
+import Chat from './pages/Chat';
+import Landing from './pages/Landing';
+import Verification from './pages/Verification';
+import AdminPanel from './pages/AdminPanel';
 import MyProfile from './pages/MyProfile.tsx';
-import EditProfile from './pages/EditProfile.tsx';
-import Subscription from './pages/Subscription.tsx';
-import ProfileDetailModal from './pages/ProfileDetailModal.tsx';
-import { UserProfile, Gender, AccountStatus, SubscriptionPlan, Footprint, LikeReceived } from './types.ts';
-import { generateEliteProfiles } from './services/geminiService.ts';
-import { Icons } from './components/Icons.tsx';
+import EditProfile from './pages/EditProfile';
+import Subscription from './pages/Subscription';
+import ProfileDetailModal from './pages/ProfileDetailModal';
+import { UserProfile, Gender, AccountStatus, SubscriptionPlan, Footprint, LikeReceived } from './types';
+import { generateEliteProfiles } from './services/geminiService';
+import { Icons } from './components/Icons';
 
 const INITIAL_ME: UserProfile = {
   id: 'me',
