@@ -18,21 +18,20 @@ import { UserProfile, Gender, AccountStatus, SubscriptionPlan, Footprint, LikeRe
 import { generateEliteProfiles } from './services/geminiService.ts';
 import { Icons } from './components/Icons.tsx';
 
-// ... (残りのApp.tsxの内容は提供されたものと同様、インポート部分のみを厳密に修正)
 const INITIAL_ME: UserProfile = {
   id: 'me',
   name: 'タクミ',
   age: 29,
   gender: Gender.Male,
-  occupation: '建築家',
+  occupation: '経営者',
   income: '2000万円~',
   education: '東京大学',
   location: '港区',
   height: 182,
   bodyType: '細マッチョ',
-  bio: '空の境界をデザインし、ミューズを探しています。コーヒー愛好家です。',
-  imageUrls: ['https://picsum.photos/seed/me/400/400', 'https://picsum.photos/seed/me2/400/400', 'https://picsum.photos/seed/me3/400/400'],
-  tags: ['デザイン', 'コーヒー', '建築', 'アート'],
+  bio: '価値観の合う方と洗練された時間を過ごしたいと思っています。',
+  imageUrls: ['https://picsum.photos/seed/me/400/400'],
+  tags: ['ゴルフ', 'ワイン', '旅行'],
   isVerified: true,
   status: AccountStatus.Gold,
   subscription: SubscriptionPlan.Free,
@@ -46,22 +45,21 @@ const GlobalMatchOverlay: React.FC<{
 }> = ({ me, matchedUser, onClose, onGoToChat }) => {
   if (!matchedUser) return null;
   return (
-    <div className="fixed inset-0 z-[20000000] flex flex-col items-center justify-center bg-black/95 backdrop-blur-2xl animate-fade-in">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gold-600/30 via-transparent to-transparent opacity-70"></div>
+    <div className="fixed inset-0 z-[20000] flex flex-col items-center justify-center bg-black/95 backdrop-blur-2xl animate-fade-in">
       <div className="relative z-10 text-center space-y-8 px-8 w-full max-w-md">
         <header className="space-y-3 animate-bounce-slow">
-          <Icons.Sparkles className="w-16 h-16 mx-auto text-gold-400 drop-shadow-[0_0_25px_rgba(212,175,55,1)]" />
+          <Icons.Sparkles className="w-16 h-16 mx-auto text-gold-400" />
           <h2 className="text-6xl font-serif font-black text-transparent bg-clip-text bg-gradient-to-b from-gold-100 to-gold-500 italic">MATCHED</h2>
         </header>
         <div className="flex items-center justify-center gap-6 py-6">
-          <img src={me.imageUrls[0]} className="w-28 h-28 rounded-full object-cover border-4 border-gold-500 shadow-2xl animate-slide-in-left" alt="Me" />
-          <Icons.Heart className="w-12 h-12 text-gold-500 fill-gold-500 animate-pulse" />
-          <img src={matchedUser.imageUrls[0]} className="w-28 h-28 rounded-full object-cover border-4 border-gold-500 shadow-2xl animate-slide-in-right" alt="Matched" />
+          <img src={me.imageUrls[0]} className="w-24 h-24 rounded-full border-2 border-gold-500 shadow-2xl" alt="Me" />
+          <Icons.Heart className="w-10 h-10 text-gold-500 fill-gold-500 animate-pulse" />
+          <img src={matchedUser.imageUrls[0]} className="w-24 h-24 rounded-full border-2 border-gold-500 shadow-2xl" alt="Matched" />
         </div>
-        <p className="text-gray-200 text-xl font-serif">{matchedUser.name}さんと繋和りました</p>
+        <p className="text-gray-200 text-xl">{matchedUser.name}さんとマッチングしました！</p>
         <div className="flex flex-col gap-4 w-full pt-4">
-          <button onClick={onGoToChat} className="w-full py-5 bg-gradient-to-r from-gold-600 to-gold-400 rounded-full text-black font-black uppercase tracking-[0.2em] shadow-2xl active:scale-95 transition-all">メッセージを送る</button>
-          <button onClick={onClose} className="w-full py-2 text-gray-500 hover:text-white text-[10px] font-black uppercase tracking-[0.3em]">閉じる</button>
+          <button onClick={onGoToChat} className="w-full py-4 bg-gold-500 rounded-full text-black font-bold uppercase tracking-widest">メッセージを送る</button>
+          <button onClick={onClose} className="w-full py-2 text-gray-500 hover:text-white text-[10px] uppercase font-bold">閉じる</button>
         </div>
       </div>
     </div>
@@ -89,123 +87,39 @@ const AppContent: React.FC<{
     const matchedIds = new Set(matches.map(m => m.id));
     return allUsers.filter(u => 
       u.gender !== meProfile.gender && 
-      !matchedIds.has(u.id) && 
-      (u.status === AccountStatus.Gold || u.status === AccountStatus.Black || u.status === AccountStatus.Approved)
+      !matchedIds.has(u.id)
     );
   }, [allUsers, matches, meProfile.gender]);
 
-  const handleOpenDetail = (profile: UserProfile) => {
-    setSelectedProfile(profile);
-  };
-
-  const handleCloseDetail = () => {
-    setSelectedProfile(null);
-  };
+  const handleOpenDetail = (profile: UserProfile) => setSelectedProfile(profile);
+  const handleCloseDetail = () => setSelectedProfile(null);
 
   const handleLikeInDetail = () => {
     if (!selectedProfile) return;
     const profile = selectedProfile;
-    
-    setMatches(prev => {
-      if (prev.find(p => p.id === profile.id)) return prev;
-      return [profile, ...prev];
-    });
-
+    setMatches(prev => [...prev, profile]);
     setReceivedLikes(prev => prev.filter(l => l.user.id !== profile.id));
     setJustMatchedUser(profile);
     handleCloseDetail();
   };
 
-  const isSelectedMatched = matches.some(m => m.id === selectedProfile?.id);
-
   return (
-    <div className="min-h-screen bg-luxe-black text-white font-sans selection:bg-gold-500 selection:text-black">
-      {!selectedProfile && (
-        <Navigation 
-          hasNewFootprints={footprints.some(f => f.isNew)} 
-          hasNewLikes={receivedLikes.some(l => l.isNew)}
-        />
-      )}
+    <div className="min-h-screen bg-luxe-black text-white font-sans">
+      {!selectedProfile && <Navigation hasNewFootprints={footprints.some(f => f.isNew)} hasNewLikes={receivedLikes.some(l => l.isNew)} />}
       
-      <GlobalMatchOverlay 
-        me={meProfile} 
-        matchedUser={justMatchedUser} 
-        onClose={() => setJustMatchedUser(null)} 
-        onGoToChat={() => {
-          setJustMatchedUser(null);
-          window.location.hash = '#/messages';
-        }}
-      />
-
-      <ProfileDetailModal 
-        profile={selectedProfile} 
-        isMatched={isSelectedMatched}
-        onClose={handleCloseDetail} 
-        onLike={handleLikeInDetail}
-        onReject={handleCloseDetail}
-      />
+      <GlobalMatchOverlay me={meProfile} matchedUser={justMatchedUser} onClose={() => setJustMatchedUser(null)} onGoToChat={() => { setJustMatchedUser(null); window.location.hash = '#/messages'; }} />
+      <ProfileDetailModal profile={selectedProfile} isMatched={matches.some(m => m.id === selectedProfile?.id)} onClose={handleCloseDetail} onLike={handleLikeInDetail} />
 
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route 
-          path="/dashboard" 
-          element={
-            <Dashboard 
-              meProfile={meProfile}
-              userGender={meProfile.gender}
-              onOpenProfile={handleOpenDetail}
-              matches={matches} 
-              setMatches={setMatches} 
-              onMatch={(p) => setJustMatchedUser(p)} 
-            />
-          } 
-        />
-        <Route 
-          path="/discover" 
-          element={
-            <Discover 
-              meProfile={meProfile}
-              profiles={targetGenderUsers}
-              loading={loadingUsers}
-              matches={matches}
-              setMatches={setMatches}
-              onOpenProfile={handleOpenDetail}
-            />
-          } 
-        />
-        <Route 
-          path="/likes" 
-          element={
-            <LikesReceived 
-              likes={receivedLikes} 
-              setLikes={setReceivedLikes} 
-              onOpenProfile={handleOpenDetail} 
-            />
-          } 
-        />
-        <Route 
-          path="/footprints" 
-          element={
-            <Footprints 
-              footprints={footprints} 
-              setFootprints={setFootprints} 
-              meProfile={meProfile} 
-              matches={matches} 
-              setMatches={setMatches} 
-              onOpenProfile={handleOpenDetail}
-            />
-          } 
-        />
+        <Route path="/dashboard" element={<Dashboard meProfile={meProfile} userGender={meProfile.gender} onOpenProfile={handleOpenDetail} matches={matches} setMatches={setMatches} onMatch={setJustMatchedUser} />} />
+        <Route path="/discover" element={<Discover meProfile={meProfile} profiles={targetGenderUsers} loading={loadingUsers} matches={matches} setMatches={setMatches} onOpenProfile={handleOpenDetail} />} />
+        <Route path="/likes" element={<LikesReceived likes={receivedLikes} setLikes={setReceivedLikes} onOpenProfile={handleOpenDetail} />} />
+        <Route path="/footprints" element={<Footprints footprints={footprints} setFootprints={setFootprints} meProfile={meProfile} matches={matches} setMatches={setMatches} onOpenProfile={handleOpenDetail} />} />
         <Route path="/messages" element={<Chat matches={matches} mySubscription={meProfile.subscription} onOpenProfile={handleOpenDetail} />} />
         <Route path="/profile" element={<MyProfile user={meProfile} onAdminMode={() => setAppRole('NONE')} onLogout={handleLogout} />} />
         <Route path="/profile/edit" element={<EditProfile user={meProfile} onSave={setMeProfile} />} />
-        <Route path="/subscription" element={<Subscription currentPlan={meProfile.subscription} onSelectPlan={(plan) => {
-          setMeProfile(prev => ({
-            ...prev,
-            subscription: plan,
-            subscriptionUntil: Date.now() + 30 * 24 * 60 * 60 * 1000
-          }));
-        }} />} />
+        <Route path="/subscription" element={<Subscription currentPlan={meProfile.subscription} onSelectPlan={(plan) => setMeProfile(prev => ({...prev, subscription: plan}))} />} />
       </Routes>
     </div>
   );
@@ -224,12 +138,6 @@ const App: React.FC = () => {
   const [footprints, setFootprints] = useState<Footprint[]>([]);
   const [receivedLikes, setReceivedLikes] = useState<LikeReceived[]>([]);
 
-  const handleLogout = () => {
-    setAppRole('NONE');
-    setIsAuthenticated(false);
-    setIsVerified(false);
-  };
-
   useEffect(() => {
     const init = async () => {
       setLoadingUsers(true);
@@ -238,111 +146,52 @@ const App: React.FC = () => {
           generateEliteProfiles(15, Gender.Female),
           generateEliteProfiles(15, Gender.Male)
         ]);
-        const users = [...females, ...males];
-        setAllUsers(users);
-
-        const targetGender = INITIAL_ME.gender === Gender.Male ? Gender.Female : Gender.Male;
-        const potentialVisitors = users.filter(u => u.gender === targetGender);
-        
-        const initialFootprints: Footprint[] = potentialVisitors.slice(0, 5).map((visitor, idx) => ({
-          id: `fp-${idx}`,
-          visitor,
-          timestamp: Date.now() - (idx * 3600000),
-          isNew: idx < 2
-        }));
-        setFootprints(initialFootprints);
-
-        const initialLikes: LikeReceived[] = potentialVisitors.slice(5, 8).map((user, idx) => ({
-          id: `like-${idx}`,
-          user,
-          timestamp: Date.now() - (idx * 1800000),
-          isNew: true
-        }));
-        setReceivedLikes(initialLikes);
-
-      } catch (err) {
-        console.error("Initialization error", err);
-      } finally {
-        setLoadingUsers(false);
-      }
+        setAllUsers([...females, ...males]);
+      } catch (err) { console.error(err); } finally { setLoadingUsers(false); }
     };
     init();
   }, []);
 
   const handleAdminAuth = (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminPasscode === '0000') {
-      setIsAdminAuthenticated(true);
-      setAppRole('ADMIN');
-    } else {
-      alert('パスコードが正しくありません (デモ用: 0000)');
-      setAdminPasscode('');
-    }
+    if (adminPasscode === '0000') { setIsAdminAuthenticated(true); setAppRole('ADMIN'); }
+    else { alert('パスコード: 0000'); setAdminPasscode(''); }
   };
 
   if (appRole === 'NONE') {
     return (
-      <div className="min-h-screen bg-luxe-black flex flex-col items-center justify-center p-6 animate-fade-in">
+      <div className="min-h-screen bg-luxe-black flex flex-col items-center justify-center p-6">
         <div className="mb-16 text-center">
-          <Icons.Diamond className="w-16 h-16 text-gold-400 mx-auto mb-4 drop-shadow-[0_0_15px_rgba(212,175,55,0.3)]" />
-          <h1 className="text-4xl font-serif text-white tracking-tighter">Luxe & Rose <span className="text-gold-500 italic">Systems</span></h1>
+          <Icons.Diamond className="w-16 h-16 text-gold-400 mx-auto mb-4" />
+          <h1 className="text-4xl font-serif text-white">Luxe & Rose <span className="text-gold-500">System</span></h1>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
-          <button onClick={() => setAppRole('USER')} className="group relative h-80 bg-gradient-to-br from-luxe-charcoal to-black rounded-[2rem] border border-gold-500/10 flex flex-col items-center justify-center gap-6 hover:border-gold-500/50 transition-all duration-500 overflow-hidden shadow-2xl">
-            <div className="bg-gold-500/10 p-5 rounded-full group-hover:bg-gold-500/20 transition-colors">
-              <Icons.User className="w-10 h-10 text-gold-400" />
-            </div>
-            <div className="text-center z-10">
-              <span className="block text-2xl font-serif text-white mb-1">Client Application</span>
-              <span className="text-[10px] text-gold-500/60 uppercase tracking-[0.2em] font-black">会員ポータルへ</span>
-            </div>
+          <button onClick={() => setAppRole('USER')} className="h-64 bg-luxe-panel rounded-3xl border border-gold-500/10 flex flex-col items-center justify-center gap-4 hover:border-gold-500/50 transition-all">
+            <Icons.User className="w-10 h-10 text-gold-400" />
+            <span className="text-xl font-serif">アプリを開始</span>
           </button>
-          <div className="group relative h-80 bg-[#0a0a0a] rounded-[2rem] border border-white/5 flex flex-col items-center justify-center p-8 transition-all duration-500 hover:border-blue-500/30 shadow-2xl">
-             {isAdminAuthenticated ? (
-                <div className="text-center space-y-6">
-                   <Icons.Admin className="w-10 h-10 text-blue-400 mx-auto" />
-                   <button onClick={() => setAppRole('ADMIN')} className="w-full py-3 bg-blue-600 text-white rounded-full text-xs font-bold uppercase tracking-widest shadow-lg shadow-blue-600/20">管理画面を開く</button>
-                </div>
-             ) : (
-                <form onSubmit={handleAdminAuth} className="w-full space-y-6">
-                   <Icons.Admin className="w-10 h-10 text-gray-700 mx-auto" />
-                   <input type="password" placeholder="PASSCODE" value={adminPasscode} onChange={(e) => setAdminPasscode(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center text-white placeholder-gray-700 focus:outline-none focus:border-blue-500/50 transition-all text-sm tracking-[0.5em]" />
-                   <button type="submit" className="w-full py-3 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-widest border border-white/5">認証</button>
-                </form>
-             )}
+          <div className="h-64 bg-luxe-panel rounded-3xl border border-white/5 flex flex-col items-center justify-center p-8">
+            <form onSubmit={handleAdminAuth} className="w-full space-y-4">
+              <Icons.Admin className="w-10 h-10 text-gray-700 mx-auto" />
+              <input type="password" placeholder="PASSCODE" value={adminPasscode} onChange={(e) => setAdminPasscode(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-center text-white focus:outline-none" />
+              <button type="submit" className="w-full py-2 bg-white/5 text-gray-400 text-xs rounded-xl">管理者ログイン</button>
+            </form>
           </div>
         </div>
       </div>
     );
   }
 
-  if (appRole === 'ADMIN') {
-    return <AdminPanel allUsers={allUsers} onUpdateUser={(u) => setAllUsers(prev => prev.map(old => old.id === u.id ? u : old))} onExit={() => setAppRole('NONE')} />;
-  }
-
-  if (!isAuthenticated) {
-    return <Landing onEnter={() => setIsAuthenticated(true)} />;
-  }
-
-  if (!isVerified) {
-    return <Verification onComplete={() => setIsVerified(true)} />;
-  }
+  if (appRole === 'ADMIN') return <AdminPanel allUsers={allUsers} onUpdateUser={(u) => setAllUsers(prev => prev.map(o => o.id === u.id ? u : o))} onExit={() => setAppRole('NONE')} />;
+  if (!isAuthenticated) return <Landing onEnter={() => setIsAuthenticated(true)} />;
+  if (!isVerified) return <Verification onComplete={() => setIsVerified(true)} />;
 
   return (
     <HashRouter>
       <AppContent 
-        meProfile={meProfile} 
-        setMeProfile={setMeProfile} 
-        allUsers={allUsers} 
-        loadingUsers={loadingUsers} 
-        matches={matches} 
-        setMatches={setMatches} 
-        footprints={footprints} 
-        setFootprints={setFootprints} 
-        receivedLikes={receivedLikes}
-        setReceivedLikes={setReceivedLikes}
-        handleLogout={handleLogout} 
-        setAppRole={setAppRole}
+        meProfile={meProfile} setMeProfile={setMeProfile} allUsers={allUsers} loadingUsers={loadingUsers} 
+        matches={matches} setMatches={setMatches} footprints={footprints} setFootprints={setFootprints} 
+        receivedLikes={receivedLikes} setReceivedLikes={setReceivedLikes} handleLogout={() => setIsAuthenticated(false)} setAppRole={setAppRole}
       />
     </HashRouter>
   );
