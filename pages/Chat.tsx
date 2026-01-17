@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { UserProfile, Message, SubscriptionPlan } from '../types.ts';
-import { chatWithPersona } from '../services/geminiService.ts';
-import { Icons } from '../components/Icons.tsx';
+import { UserProfile, Message, SubscriptionPlan } from '../types';
+import { chatWithPersona } from '../services/geminiService';
+import { Icons } from '../components/Icons';
 import { useNavigate } from 'react-router-dom';
 
 interface ChatProps {
