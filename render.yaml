@@ -9,7 +9,12 @@ services:
     envVars:
       - key: STRIPE_SECRET_KEY
         sync: false
+        description: "Stripe Secret Key (sk_...)"
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+        description: "Stripe Publishable Key (pk_...)"
       - key: API_KEY
         sync: false
+        description: "Google Gemini API Key"
       - key: NODE_VERSION
         value: 20.0.0
