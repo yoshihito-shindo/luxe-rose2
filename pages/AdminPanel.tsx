@@ -14,21 +14,26 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ allUsers, onUpdateUser, onExit 
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [backendUrl, setBackendUrl] = useState<string>(window.location.origin);
   
-  // 保存・テスト状態の管理
+  // Stripe Key Management
+  const [localPubKey, setLocalPubKey] = useState(localStorage.getItem('DEBUG_STRIPE_PUB_KEY') || '');
+  const [saveStatus, setSaveStatus] = useState(false);
+
+  // サーバー状態
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'online' | 'error'>('idle');
   const [serverInfo, setServerInfo] = useState<any>(null);
-
-  const mockTransactions = [
-    { id: 'TXN-001', user: 'タクミ', plan: 'Platinum', amount: '¥48,000', date: '2024-05-20', status: 'Succeeded' },
-    { id: 'TXN-002', user: 'ケンタロウ', plan: 'Standard', amount: '¥6,500', date: '2024-05-19', status: 'Succeeded' },
-    { id: 'TXN-003', user: 'ショウタ', plan: 'Premium', amount: '¥29,800', date: '2024-05-18', status: 'Succeeded' },
-  ];
 
   const pendingUsers = allUsers.filter(u => u.status === AccountStatus.Pending || u.status === AccountStatus.Approved);
 
   const handleStatusChange = (user: UserProfile, newStatus: AccountStatus) => {
     onUpdateUser({ ...user, status: newStatus });
     setSelectedUser(null);
+  };
+
+  const saveLocalKeys = () => {
+    localStorage.setItem('DEBUG_STRIPE_PUB_KEY', localPubKey);
+    setSaveStatus(true);
+    setTimeout(() => setSaveStatus(false), 2000);
+    testConnection();
   };
 
   const testConnection = async () => {
@@ -58,23 +63,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ allUsers, onUpdateUser, onExit 
            <Icons.Admin className="w-6 h-6 text-blue-500" /> Luxe Admin
         </h1>
         <nav className="space-y-4 flex-1">
-          <button 
-            onClick={() => setActiveTab('approvals')} 
-            className={`w-full text-left p-4 rounded-xl text-sm transition-all flex items-center justify-between ${activeTab === 'approvals' ? 'bg-blue-600 shadow-lg' : 'text-gray-500 hover:text-white'}`}
-          >
+          <button onClick={() => setActiveTab('approvals')} className={`w-full text-left p-4 rounded-xl text-sm flex items-center justify-between ${activeTab === 'approvals' ? 'bg-blue-600 shadow-lg' : 'text-gray-500 hover:text-white'}`}>
             審査管理
             {pendingUsers.length > 0 && <span className="bg-red-500 text-[10px] px-2 py-0.5 rounded-full">{pendingUsers.length}</span>}
           </button>
-          <button 
-            onClick={() => setActiveTab('billing')} 
-            className={`w-full text-left p-4 rounded-xl text-sm transition-all flex items-center gap-3 ${activeTab === 'billing' ? 'bg-blue-600 shadow-lg' : 'text-gray-500 hover:text-white'}`}
-          >
+          <button onClick={() => setActiveTab('billing')} className={`w-full text-left p-4 rounded-xl text-sm flex items-center gap-3 ${activeTab === 'billing' ? 'bg-blue-600 shadow-lg' : 'text-gray-500 hover:text-white'}`}>
             <Icons.Card className="w-4 h-4" /> 売上管理
           </button>
-          <button 
-            onClick={() => setActiveTab('settings')} 
-            className={`w-full text-left p-4 rounded-xl text-sm transition-all flex items-center gap-3 ${activeTab === 'settings' ? 'bg-blue-600 shadow-lg' : 'text-gray-500 hover:text-white'}`}
-          >
+          <button onClick={() => setActiveTab('settings')} className={`w-full text-left p-4 rounded-xl text-sm flex items-center gap-3 ${activeTab === 'settings' ? 'bg-blue-600 shadow-lg' : 'text-gray-500 hover:text-white'}`}>
             <Icons.Settings className="w-4 h-4" /> システム設定
           </button>
         </nav>
@@ -84,40 +80,22 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ allUsers, onUpdateUser, onExit 
       <main className="flex-1 p-8 md:p-12 overflow-y-auto bg-[#0a0a0a]">
         {activeTab === 'approvals' && (
           <div className="animate-fade-in space-y-8">
-            <header>
-               <h2 className="text-4xl font-bold font-serif">審査管理</h2>
-               <p className="text-gray-500 mt-2">入会希望者のプロフィール審査</p>
-            </header>
+            <header><h2 className="text-4xl font-bold font-serif">審査管理</h2></header>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <div className="space-y-4">
-                {pendingUsers.length === 0 ? (
-                  <div className="text-gray-600 py-10 italic">現在保留中のユーザーはいません</div>
-                ) : (
-                  pendingUsers.map(user => (
-                    <div 
-                      key={user.id} 
-                      onClick={() => setSelectedUser(user)}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 ${selectedUser?.id === user.id ? 'bg-blue-600/10 border-blue-500' : 'bg-luxe-panel border-white/5 hover:border-white/20'}`}
-                    >
-                      <img src={user.imageUrls[0]} className="w-12 h-12 rounded-full object-cover" />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold">{user.name}</span>
-                          <span className="text-xs text-gray-500">{user.age}歳</span>
-                        </div>
-                        <p className="text-[10px] text-gray-400 uppercase tracking-widest">{user.occupation}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
+                {pendingUsers.map(user => (
+                  <div key={user.id} onClick={() => setSelectedUser(user)} className={`p-4 rounded-2xl border flex items-center gap-4 cursor-pointer ${selectedUser?.id === user.id ? 'bg-blue-600/10 border-blue-500' : 'bg-luxe-panel border-white/5'}`}>
+                    <img src={user.imageUrls[0]} className="w-12 h-12 rounded-full object-cover" />
+                    <div><span className="font-bold">{user.name}</span><p className="text-[10px] text-gray-400">{user.occupation}</p></div>
+                  </div>
+                ))}
               </div>
               {selectedUser && (
                 <div className="bg-luxe-panel p-8 rounded-[2.5rem] border border-white/10 animate-fade-in">
-                  <img src={selectedUser.imageUrls[0]} className="w-full aspect-square rounded-2xl object-cover mb-6 shadow-2xl" />
-                  <h3 className="text-2xl font-serif font-bold mb-6">{selectedUser.name}, {selectedUser.age}歳</h3>
+                  <img src={selectedUser.imageUrls[0]} className="w-full aspect-square rounded-2xl object-cover mb-6" />
                   <div className="grid grid-cols-2 gap-4">
-                    <button onClick={() => handleStatusChange(selectedUser, AccountStatus.Pending)} className="py-4 rounded-xl bg-red-500/10 text-red-500 text-xs font-bold uppercase">否認</button>
-                    <button onClick={() => handleStatusChange(selectedUser, AccountStatus.Gold)} className="py-4 rounded-xl bg-green-600 text-white text-xs font-bold uppercase">承認</button>
+                    <button onClick={() => handleStatusChange(selectedUser, AccountStatus.Pending)} className="py-4 rounded-xl bg-red-500/10 text-red-500 font-bold">否認</button>
+                    <button onClick={() => handleStatusChange(selectedUser, AccountStatus.Gold)} className="py-4 rounded-xl bg-green-600 text-white font-bold">承認</button>
                   </div>
                 </div>
               )}
@@ -127,55 +105,64 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ allUsers, onUpdateUser, onExit 
 
         {activeTab === 'settings' && (
           <div className="max-w-3xl space-y-12 animate-fade-in">
-            <header className="flex justify-between items-end">
-               <div>
-                 <h2 className="text-4xl font-bold font-serif">システム設定</h2>
-                 <p className="text-gray-500 mt-2">サーバー同期状況</p>
-               </div>
-               <button onClick={testConnection} className="text-[10px] font-black bg-white/5 border border-white/10 px-4 py-2 rounded-lg hover:bg-white/10">再読み込み</button>
+            <header>
+              <h2 className="text-4xl font-bold font-serif">システム設定</h2>
+              <p className="text-gray-500 mt-2">決済・サーバー環境のデバッグ</p>
             </header>
             
-            <div className="bg-luxe-panel p-8 rounded-[2.5rem] border border-white/5 space-y-8 shadow-2xl">
+            <div className="bg-luxe-panel p-8 rounded-[2.5rem] border border-white/5 space-y-10">
+              {/* Status Section */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-2">
-                    <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Backend Connectivity</span>
-                    <div className="flex items-center gap-3">
+                 <div className="p-6 bg-black/40 rounded-2xl border border-white/5">
+                    <span className="text-[10px] text-gray-500 uppercase font-black">Backend Health</span>
+                    <div className="flex items-center gap-3 mt-2">
                        <div className={`w-3 h-3 rounded-full ${testStatus === 'online' ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`}></div>
-                       <span className="text-xl font-serif">{testStatus === 'online' ? 'ONLINE' : 'DISCONNECTED'}</span>
+                       <span className="text-xl font-serif uppercase">{testStatus}</span>
                     </div>
                  </div>
-                 <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-2">
-                    <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Stripe Public Key</span>
-                    <div className="flex items-center gap-3">
-                       <div className={`w-3 h-3 rounded-full ${serverInfo?.has_pub_key ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`}></div>
-                       <span className="text-xl font-serif">{serverInfo?.has_pub_key ? 'RECOGNIZED' : 'MISSING'}</span>
+                 <div className="p-6 bg-black/40 rounded-2xl border border-white/5">
+                    <span className="text-[10px] text-gray-500 uppercase font-black">Server Secret Key</span>
+                    <div className="flex items-center gap-3 mt-2">
+                       <div className={`w-3 h-3 rounded-full ${serverInfo?.stripe_mode !== 'test' || serverInfo?.identity ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                       <span className="text-xl font-serif">{serverInfo?.stripe_mode === 'live' ? 'LIVE MODE' : 'TEST MODE'}</span>
                     </div>
                  </div>
               </div>
 
-              {!serverInfo?.has_pub_key && (
-                <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl space-y-4">
-                  <div className="flex items-center gap-3 text-red-500 font-bold uppercase text-xs">
-                    <Icons.Alert className="w-5 h-5" /> 公開鍵が設定されていません
-                  </div>
-                  <p className="text-xs text-red-100/70 leading-relaxed">
-                    Renderのダッシュボードで <strong>STRIPE_PUBLISHABLE_KEY</strong> を設定してください。<br/>
-                    設定後、自動的に再デプロイが行われ、決済が可能になります。
-                  </p>
-                  <a 
-                    href="https://dashboard.render.com" 
-                    target="_blank" 
-                    className="inline-block px-4 py-2 bg-red-500 text-white text-[10px] font-black uppercase rounded-lg"
-                  >
-                    Renderダッシュボードを開く
-                  </a>
+              {/* Manual Override Section */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <Icons.Card className="w-5 h-5 text-gold-400" />
+                  <h3 className="text-lg font-serif">Stripe 公開鍵の強制設定</h3>
                 </div>
-              )}
+                <p className="text-xs text-gray-500">Renderの環境変数が反映されない場合、ここに公開鍵(pk_...)を入力して保存してください。このブラウザでの決済時に優先使用されます。</p>
+                <div className="space-y-4">
+                  <input 
+                    type="text" 
+                    placeholder="pk_live_..."
+                    value={localPubKey}
+                    onChange={(e) => setLocalPubKey(e.target.value)}
+                    className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-sm font-mono text-gold-200 outline-none focus:border-gold-500"
+                  />
+                  <button 
+                    onClick={saveLocalKeys}
+                    className="px-8 py-3 bg-blue-600 text-white text-xs font-black uppercase rounded-lg shadow-lg hover:bg-blue-500 transition-all flex items-center gap-2"
+                  >
+                    {saveStatus ? <Icons.Verify className="w-4 h-4" /> : null}
+                    {saveStatus ? '保存しました' : '公開鍵を上書き保存'}
+                  </button>
+                </div>
+              </div>
 
               <div className="pt-8 border-t border-white/5">
-                <h4 className="text-[10px] text-gray-600 uppercase font-black tracking-widest mb-4">Server Diagnostics</h4>
-                <pre className="bg-black/60 p-6 rounded-xl font-mono text-[10px] text-gray-400 overflow-x-auto">
-                  {JSON.stringify(serverInfo || { status: 'offline' }, null, 2)}
+                <h4 className="text-[10px] text-gray-600 uppercase font-black mb-4 tracking-widest">Diagnostic Logs</h4>
+                <pre className="bg-black/80 p-6 rounded-xl font-mono text-[10px] text-blue-400 overflow-x-auto whitespace-pre-wrap leading-relaxed">
+                  {JSON.stringify({
+                    server_response: serverInfo,
+                    browser_local_key: localPubKey ? 'SET (starts with ' + localPubKey.substring(0, 7) + ')' : 'NOT SET',
+                    location: window.location.href,
+                    timestamp: new Date().toISOString()
+                  }, null, 2)}
                 </pre>
               </div>
             </div>
