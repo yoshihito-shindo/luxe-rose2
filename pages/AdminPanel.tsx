@@ -12,11 +12,9 @@ interface AdminPanelProps {
 const AdminPanel: React.FC<AdminPanelProps> = ({ allUsers, onUpdateUser, onExit }) => {
   const [activeTab, setActiveTab] = useState<'approvals' | 'billing' | 'settings'>('approvals');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-  const [backendUrl, setBackendUrl] = useState<string>(localStorage.getItem('BACKEND_URL') || '');
-  const [stripePubKey, setStripePubKey] = useState<string>(localStorage.getItem('STRIPE_PUB_KEY') || '');
+  const [backendUrl, setBackendUrl] = useState<string>(window.location.origin);
   
   // 保存・テスト状態の管理
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'online' | 'error'>('idle');
   const [serverInfo, setServerInfo] = useState<any>(null);
 
@@ -33,25 +31,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ allUsers, onUpdateUser, onExit 
     setSelectedUser(null);
   };
 
-  const handleSaveSettings = () => {
-    setSaveStatus('saving');
-    localStorage.setItem('BACKEND_URL', backendUrl);
-    localStorage.setItem('STRIPE_PUB_KEY', stripePubKey);
-    setTimeout(() => {
-      setSaveStatus('saved');
-      setTimeout(() => setSaveStatus('idle'), 3000);
-    }, 800);
-  };
-
   const testConnection = async () => {
-    if (!backendUrl) {
-      setTestStatus('error');
-      return;
-    }
     setTestStatus('testing');
     try {
-      const cleanUrl = backendUrl.replace(/\/$/, '');
-      const response = await fetch(`${cleanUrl}/api/health`);
+      const response = await fetch(`${backendUrl}/api/health`);
       if (response.ok) {
         const data = await response.json();
         setServerInfo(data);
@@ -63,6 +46,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ allUsers, onUpdateUser, onExit 
       setTestStatus('error');
     }
   };
+
+  useEffect(() => {
+    testConnection();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col md:flex-row font-sans">
@@ -138,136 +125,59 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ allUsers, onUpdateUser, onExit 
           </div>
         )}
 
-        {activeTab === 'billing' && (
-          <div className="animate-fade-in space-y-8">
-            <header>
-               <h2 className="text-4xl font-bold font-serif">売上管理</h2>
-               <p className="text-gray-500 mt-2">Stripe決済履歴と収益分析</p>
-            </header>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <div className="bg-luxe-panel p-6 rounded-2xl border border-white/5">
-                  <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">月間売上 (MAY)</span>
-                  <p className="text-3xl font-serif text-gold-400 mt-2">¥84,300</p>
-               </div>
-               <div className="bg-luxe-panel p-6 rounded-2xl border border-white/5">
-                  <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">アクティブ会員</span>
-                  <p className="text-3xl font-serif text-blue-400 mt-2">128名</p>
-               </div>
-               <div className="bg-luxe-panel p-6 rounded-2xl border border-white/5">
-                  <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">継続率</span>
-                  <p className="text-3xl font-serif text-green-400 mt-2">94.2%</p>
-               </div>
-            </div>
-            <div className="bg-luxe-panel rounded-2xl border border-white/5 overflow-hidden">
-               <table className="w-full text-left text-sm">
-                  <thead className="bg-white/5 text-[10px] uppercase font-black tracking-widest text-gray-500">
-                     <tr>
-                        <th className="p-4">Transaction ID</th>
-                        <th className="p-4">User</th>
-                        <th className="p-4">Plan</th>
-                        <th className="p-4">Amount</th>
-                        <th className="p-4">Date</th>
-                        <th className="p-4">Status</th>
-                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                     {mockTransactions.map(tx => (
-                        <tr key={tx.id} className="hover:bg-white/5 transition-colors">
-                           <td className="p-4 font-mono text-[10px] text-gray-400">{tx.id}</td>
-                           <td className="p-4 font-bold">{tx.user}</td>
-                           <td className="p-4"><span className="px-2 py-1 bg-gold-500/10 text-gold-400 rounded text-[10px] font-bold">{tx.plan}</span></td>
-                           <td className="p-4 font-bold text-white">{tx.amount}</td>
-                           <td className="p-4 text-gray-500 text-xs">{tx.date}</td>
-                           <td className="p-4 text-green-500 font-bold text-xs flex items-center gap-2">
-                              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                              {tx.status}
-                           </td>
-                        </tr>
-                     ))}
-                  </tbody>
-               </table>
-            </div>
-          </div>
-        )}
-
         {activeTab === 'settings' && (
           <div className="max-w-3xl space-y-12 animate-fade-in">
             <header className="flex justify-between items-end">
                <div>
                  <h2 className="text-4xl font-bold font-serif">システム設定</h2>
-                 <p className="text-gray-500 mt-2">API連携とインフラ設定</p>
+                 <p className="text-gray-500 mt-2">サーバー同期状況</p>
                </div>
-               <div className="flex items-center gap-3">
-                 <div className={`w-2 h-2 rounded-full ${testStatus === 'online' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : testStatus === 'error' ? 'bg-red-500' : 'bg-gray-600'}`}></div>
-                 <span className={`text-[10px] font-black uppercase tracking-widest ${testStatus === 'online' ? 'text-green-500' : testStatus === 'error' ? 'text-red-500' : 'text-gray-600'}`}>
-                    Backend: {testStatus === 'online' ? 'ONLINE' : testStatus === 'error' ? 'OFFLINE' : 'CHECKING...'}
-                 </span>
-               </div>
+               <button onClick={testConnection} className="text-[10px] font-black bg-white/5 border border-white/10 px-4 py-2 rounded-lg hover:bg-white/10">再読み込み</button>
             </header>
             
             <div className="bg-luxe-panel p-8 rounded-[2.5rem] border border-white/5 space-y-8 shadow-2xl">
-              <div className="space-y-6">
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest block">Backend URL</label>
-                    <button 
-                      onClick={testConnection} 
-                      disabled={testStatus === 'testing' || !backendUrl}
-                      className="text-[9px] text-blue-400 hover:text-blue-300 font-black uppercase tracking-widest disabled:opacity-30 flex items-center gap-1"
-                    >
-                      {testStatus === 'testing' ? 'Testing...' : 'Test Connection'}
-                    </button>
-                  </div>
-                  <input 
-                    type="text" 
-                    value={backendUrl} 
-                    onChange={(e) => { setBackendUrl(e.target.value); setTestStatus('idle'); }} 
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 text-white font-mono text-sm focus:border-blue-500/50 outline-none transition-all"
-                    placeholder="https://your-app.onrender.com"
-                  />
-                  {testStatus === 'online' && serverInfo && (
-                    <div className="mt-3 p-4 bg-green-500/5 border border-green-500/10 rounded-xl space-y-1">
-                      <p className="text-[10px] text-green-500 font-bold uppercase tracking-widest">✓ Connection Verified</p>
-                      <p className="text-[9px] text-green-400/60 font-mono">Server ID: {serverInfo.identity} | Mode: {serverInfo.stripe_mode}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-2">
+                    <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Backend Connectivity</span>
+                    <div className="flex items-center gap-3">
+                       <div className={`w-3 h-3 rounded-full ${testStatus === 'online' ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`}></div>
+                       <span className="text-xl font-serif">{testStatus === 'online' ? 'ONLINE' : 'DISCONNECTED'}</span>
                     </div>
-                  )}
-                </div>
-                <div>
-                  <label className="text-[10px] text-gray-500 uppercase font-black tracking-widest block mb-2">Stripe Publishable Key</label>
-                  <input 
-                    type="text" 
-                    value={stripePubKey} 
-                    onChange={(e) => setStripePubKey(e.target.value)} 
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-5 py-4 text-white font-mono text-sm focus:border-blue-500/50 outline-none transition-all"
-                    placeholder="pk_test_..."
-                  />
-                </div>
+                 </div>
+                 <div className="p-6 bg-black/40 rounded-2xl border border-white/5 space-y-2">
+                    <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">Stripe Public Key</span>
+                    <div className="flex items-center gap-3">
+                       <div className={`w-3 h-3 rounded-full ${serverInfo?.has_pub_key ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`}></div>
+                       <span className="text-xl font-serif">{serverInfo?.has_pub_key ? 'RECOGNIZED' : 'MISSING'}</span>
+                    </div>
+                 </div>
               </div>
-              
-              <button 
-                onClick={handleSaveSettings}
-                disabled={saveStatus !== 'idle'}
-                className={`w-full py-4 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 ${
-                  saveStatus === 'saving' ? 'bg-blue-900/50 text-blue-300 cursor-wait' :
-                  saveStatus === 'saved' ? 'bg-green-600 text-white shadow-[0_0_20px_rgba(22,163,74,0.4)]' :
-                  'bg-blue-600 text-white shadow-lg shadow-blue-600/30 hover:brightness-110 active:scale-[0.98]'
-                }`}
-              >
-                {saveStatus === 'saving' && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
-                {saveStatus === 'saved' && <Icons.Verify className="w-4 h-4" />}
-                {saveStatus === 'saving' ? '保存中...' : saveStatus === 'saved' ? '保存完了！' : '接続設定を保存する'}
-              </button>
-            </div>
-            
-            <div className="bg-blue-600/10 border border-blue-500/20 p-6 rounded-2xl flex items-start gap-4">
-               <Icons.Alert className="w-5 h-5 text-blue-400 shrink-0 mt-1" />
-               <div className="text-xs text-blue-100/70 leading-relaxed">
-                  <p className="font-bold text-blue-400 mb-1">デプロイの手順：</p>
-                  1. GitHubにリポジトリを作成し、全てのファイルをアップロードします。<br/>
-                  2. Renderで「Web Service」を作成し、GitHubと連携します。<br/>
-                  3. Renderの設定(Environment)に <span className="text-white font-mono">STRIPE_SECRET_KEY</span> を登録します。<br/>
-                  4. デプロイ完了後、発行されたURLをここに貼り付けて「接続テスト」を行ってください。
-               </div>
+
+              {!serverInfo?.has_pub_key && (
+                <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl space-y-4">
+                  <div className="flex items-center gap-3 text-red-500 font-bold uppercase text-xs">
+                    <Icons.Alert className="w-5 h-5" /> 公開鍵が設定されていません
+                  </div>
+                  <p className="text-xs text-red-100/70 leading-relaxed">
+                    Renderのダッシュボードで <strong>STRIPE_PUBLISHABLE_KEY</strong> を設定してください。<br/>
+                    設定後、自動的に再デプロイが行われ、決済が可能になります。
+                  </p>
+                  <a 
+                    href="https://dashboard.render.com" 
+                    target="_blank" 
+                    className="inline-block px-4 py-2 bg-red-500 text-white text-[10px] font-black uppercase rounded-lg"
+                  >
+                    Renderダッシュボードを開く
+                  </a>
+                </div>
+              )}
+
+              <div className="pt-8 border-t border-white/5">
+                <h4 className="text-[10px] text-gray-600 uppercase font-black tracking-widest mb-4">Server Diagnostics</h4>
+                <pre className="bg-black/60 p-6 rounded-xl font-mono text-[10px] text-gray-400 overflow-x-auto">
+                  {JSON.stringify(serverInfo || { status: 'offline' }, null, 2)}
+                </pre>
+              </div>
             </div>
           </div>
         )}
@@ -277,4 +187,3 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ allUsers, onUpdateUser, onExit 
 };
 
 export default AdminPanel;
-
